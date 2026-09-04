@@ -18,15 +18,13 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "stdarg.h"
-#include "stdio.h"
-#include "string.h"
-#include <stdarg.h>
+#include "stm32f3xx_hal.h"
+#include "stm32f3xx_hal_gpio.h"
 #include <stdint.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "stdlib.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -49,12 +47,12 @@ I2C_HandleTypeDef hi2c1;
 
 SPI_HandleTypeDef hspi1;
 
-UART_HandleTypeDef huart2;
-
 PCD_HandleTypeDef hpcd_USB_FS;
 
 /* USER CODE BEGIN PV */
-
+const uint8_t segment_map[16] = {0x40 , 0x79 , 0x24 , 0x30 , 0x19 , 0x12 , 0x02 , 0x78 , 0x00 , 0x10 , 0x08 , 0x03 , 0x46 , 0x21 , 0x06 , 0x0E};
+const uint16_t pins[7] = {GPIO_PIN_0 , GPIO_PIN_1 , GPIO_PIN_2 , GPIO_PIN_3 , GPIO_PIN_4 , GPIO_PIN_5 , GPIO_PIN_6};
+const uint8_t stu_id[5] = {1 , 0 , 3 , 2 , 2};
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -62,19 +60,16 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_SPI1_Init(void);
-static void MX_USART2_UART_Init(void);
 static void MX_USB_PCD_Init(void);
 /* USER CODE BEGIN PFP */
-void myPrintf(const char *fmt, ...) {
-  char buffer[128];
-  va_list args;
-  va_start(args, fmt);
-  int i = vsnprintf(buffer, sizeof(buffer), fmt, args);
-  va_end(args);
-  if (i > 0) {
-    HAL_UART_Transmit(&huart2 , (uint8_t*)buffer , (uint16_t)i, HAL_MAX_DELAY);
+
+void displaynum(uint8_t num) {
+  uint8_t pattern = segment_map[num];
+  for (int i = 0 ; i < 7 ; i++) {
+    HAL_GPIO_WritePin(GPIOD, pins[i], (pattern >> i) & 1);
   }
 }
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -113,64 +108,11 @@ int main(void)
   MX_GPIO_Init();
   MX_I2C1_Init();
   MX_SPI1_Init();
-  MX_USART2_UART_Init();
   MX_USB_PCD_Init();
   /* USER CODE BEGIN 2 */
 
-  // TASK 1:
-  // int x = 42;
-  // myPrintf("%d \r\n" , x);
-
-  // TASK 2:
-  // int a = 3;
-  // int b = 4;
-  // int lhs = (a + b) * (a + b);
-  // int rhs = (a * a) + (b * b) + (2 * a * b);
-  // myPrintf("LHS: %d - RHS: %d \r\n" , lhs , rhs);
-  // if (lhs == rhs) {
-  //   myPrintf("Identity holds \r\n");
-  // } else {
-  //   myPrintf("Identity does not hold \r\n");
-  // }
-
-  // TASK 3:
-  // char str[] = "Microcontrollers";
-  // int key = 10322;
-  // myPrintf("Original string %s \r\n" , str);
-  // for (int i = 0 ; str[i] != '\0' ; i++) {
-  //   str[i] = str[i] + (key % 256);
-  // }
-  // myPrintf("Encrypted string %s \r\n" , str);
-  // for (int i = 0 ; str[i] != '\0' ; i++) {
-  //   str[i] = str[i] - (key % 256);
-  // }
-  // myPrintf("Decrypted string %s \r\n" , str);
-
-  // TASK 4:
-  int matrix_A[2][2] = {{1 , 2} , {3 , 4}};
-  int matrix_B[2][2] = {{5 , 6} , {7 , 8}};
-  int matrix_C[2][2] = {{0 , 0} , {0 , 0}};
-  for (int i = 0 ; i < 2 ; i++) {
-    for (int j = 0 ; j < 2 ; j++) {
-      for (int k = 0 ; k < 2 ; k++) {
-        matrix_C[i][j] += matrix_A[i][k] * matrix_B[k][j];
-      }
-    }
-  }
-  myPrintf("Matrix A \r\n %d %d \r\n %d %d \r\n" , matrix_A[0][0] , matrix_A[0][1] , matrix_A[1][0] , matrix_A[1][1]);
-  myPrintf("Matrix B \r\n %d %d \r\n %d %d \r\n" , matrix_B[0][0] , matrix_B[0][1] , matrix_B[1][0] , matrix_B[1][1]);
-  myPrintf("Result \r\n %d %d \r\n %d %d \r\n" , matrix_C[0][0] , matrix_C[0][1] , matrix_C[1][0] , matrix_C[1][1]);
-
-  // TASK 5:
-  // myPrintf("Armstrong numbers between 100 and 99 \r\n");
-  // for (int i = 100 ; i < 1000 ; i++) {
-  //   int dig1 = (i % 10) * (i % 10) * (i % 10);
-  //   int dig2 = ((i / 10) % 10) * ((i / 10) % 10) * ((i / 10) % 10);
-  //   int dig3 = (i / 100) * (i / 100) * (i / 100);
-  //   if (i == dig1 + dig2 + dig3) {
-  //     myPrintf("%d \r\n" , i);
-  //   }
-  // }
+  int i = 0;
+  int counter = 0;
 
   /* USER CODE END 2 */
 
@@ -180,9 +122,58 @@ int main(void)
   {
     /* USER CODE END WHILE */
 
-    // TASK 0:
-    uint8_t msg[] = "Hello World\r\n";
-    HAL_UART_Transmit(&huart2 , msg , sizeof(msg) - 1, HAL_MAX_DELAY);
+    // TASK 1:
+    // for (int i = 0; i < 16 ; i++) {
+    //   displaynum(i);
+    //   HAL_Delay(1000);
+    // }
+
+    // TASK 2:
+    // if (HAL_GPIO_ReadPin(GPIOA , GPIO_PIN_0)) {
+    //   HAL_Delay(50);
+    //   if (HAL_GPIO_ReadPin(GPIOA , GPIO_PIN_0)) {
+    //       displaynum(stu_id[i]);
+    //       i = (i + 1) % 5;
+    //       while (HAL_GPIO_ReadPin(GPIOA , GPIO_PIN_0)) {
+    //         HAL_Delay(1);
+    //       }
+    //   }
+    // }
+
+    // TASK 3:
+    // displaynum(counter);
+    // if (HAL_GPIO_ReadPin(GPIOB , GPIO_PIN_5)) {
+    //   HAL_Delay(50);
+    //   if (HAL_GPIO_ReadPin(GPIOB , GPIO_PIN_5)) {
+    //       counter -= 1;
+    //       if (counter < 0) {
+    //         counter = 0;
+    //       }
+    //       while (HAL_GPIO_ReadPin(GPIOB , GPIO_PIN_5)) {
+    //         HAL_Delay(1);
+    //       }
+    //   }
+    // } else if (HAL_GPIO_ReadPin(GPIOA , GPIO_PIN_0)) {
+    //   HAL_Delay(50);
+    //   if (HAL_GPIO_ReadPin(GPIOA , GPIO_PIN_0)) {
+    //       counter = (counter + 1) % 15;
+    //       while (HAL_GPIO_ReadPin(GPIOA , GPIO_PIN_0)) {
+    //         HAL_Delay(1);
+    //       }
+    //   }
+    // }
+
+    if (HAL_GPIO_ReadPin(GPIOA , GPIO_PIN_0)) {
+      HAL_Delay(50);
+      if (HAL_GPIO_ReadPin(GPIOA , GPIO_PIN_0)) {
+          displaynum((rand() % 6) + 1);
+          while (HAL_GPIO_ReadPin(GPIOA , GPIO_PIN_0)) {
+            HAL_Delay(1);
+          }
+      }
+    }    
+
+
 
 
     /* USER CODE BEGIN 3 */
@@ -229,9 +220,7 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB|RCC_PERIPHCLK_USART2
-                              |RCC_PERIPHCLK_I2C1;
-  PeriphClkInit.Usart2ClockSelection = RCC_USART2CLKSOURCE_PCLK1;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB|RCC_PERIPHCLK_I2C1;
   PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_HSI;
   PeriphClkInit.USBClockSelection = RCC_USBCLKSOURCE_PLL;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
@@ -256,7 +245,7 @@ static void MX_I2C1_Init(void)
 
   /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
-  hi2c1.Init.Timing = 0x00201D2B;
+  hi2c1.Init.Timing = 0x2000090E;
   hi2c1.Init.OwnAddress1 = 0;
   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
@@ -329,41 +318,6 @@ static void MX_SPI1_Init(void)
 }
 
 /**
-  * @brief USART2 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_USART2_UART_Init(void)
-{
-
-  /* USER CODE BEGIN USART2_Init 0 */
-
-  /* USER CODE END USART2_Init 0 */
-
-  /* USER CODE BEGIN USART2_Init 1 */
-
-  /* USER CODE END USART2_Init 1 */
-  huart2.Instance = USART2;
-  huart2.Init.BaudRate = 115200;
-  huart2.Init.WordLength = UART_WORDLENGTH_8B;
-  huart2.Init.StopBits = UART_STOPBITS_1;
-  huart2.Init.Parity = UART_PARITY_NONE;
-  huart2.Init.Mode = UART_MODE_TX_RX;
-  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
-  huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&huart2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN USART2_Init 2 */
-
-  /* USER CODE END USART2_Init 2 */
-
-}
-
-/**
   * @brief USB Initialization Function
   * @param None
   * @retval None
@@ -411,12 +365,17 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOF_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOE, CS_I2C_SPI_Pin|LD4_Pin|LD3_Pin|LD5_Pin
                           |LD7_Pin|LD9_Pin|LD10_Pin|LD8_Pin
                           |LD6_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3
+                          |GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6, GPIO_PIN_SET);
 
   /*Configure GPIO pins : DRDY_Pin MEMS_INT3_Pin MEMS_INT4_Pin MEMS_INT1_Pin
                            MEMS_INT2_Pin */
@@ -442,6 +401,21 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PD0 PD1 PD2 PD3
+                           PD4 PD5 PD6 */
+  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3
+                          |GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PB5 */
+  GPIO_InitStruct.Pin = GPIO_PIN_5;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
