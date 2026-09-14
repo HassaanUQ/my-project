@@ -79,12 +79,14 @@ static void MX_TIM3_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void delay_ms(uint32_t ms) {
-  __HAL_TIM_SET_COUNTER(&htim2 , 0);
-  HAL_TIM_Base_Start(&htim2);
-  while (__HAL_TIM_GET_COUNTER(&htim2) < ms) {}
-  HAL_TIM_Base_Stop(&htim2);
-}
+
+// TASK 1
+// void delay_ms(uint32_t ms) {
+//   __HAL_TIM_SET_COUNTER(&htim2 , 0);
+//   HAL_TIM_Base_Start(&htim2);
+//   while (__HAL_TIM_GET_COUNTER(&htim2) < ms) {}
+//   HAL_TIM_Base_Stop(&htim2);
+// }
 
 // TASK 2:
 // void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
