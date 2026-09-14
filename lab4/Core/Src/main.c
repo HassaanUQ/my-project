@@ -23,7 +23,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "stdio.h"
+#include "stdarg.h"
+#include "string.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -113,13 +115,24 @@ void delay_ms(uint32_t ms) {
 // }
 
 // TASK 4:
-void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
-  if(htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
-    uint32_t current_capture = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
-    period = current_capture - last_capture;
-    last_capture = current_capture;
-  }
-}
+// int _write(int file, char *ptr, int len) {
+//     HAL_UART_Transmit(&huart1, (uint8_t*)ptr, len, HAL_MAX_DELAY);
+//     return len;
+// }
+
+// volatile uint32_t last_capture = 0, period = 0, current_capture = 0;
+// volatile float frequency = 0;
+// volatile float ticks = 1000000;
+
+// void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
+//   if (htim -> Channel == HAL_TIM_ACTIVE_CHANNEL_1 ) {
+//     current_capture = HAL_TIM_ReadCapturedValue (htim ,TIM_CHANNEL_1 );
+//     period = current_capture - last_capture ;
+//     last_capture = current_capture ;
+//     frequency = ticks / period;
+//   }
+// }
+
 /* USER CODE END 0 */
 
 /**
@@ -170,7 +183,7 @@ int main(void)
   // HAL_TIM_Base_Start_IT(&htim2);
 
   // TASK 4:
-  HAL_TIM_IC_Start_IT(&htim3, TIM_CHANNEL_1);
+  // HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1);
 
   while (1)
   {
@@ -181,6 +194,10 @@ int main(void)
     // TASK 1:
     // HAL_GPIO_TogglePin(GPIOE, GPIO_PIN_8);
     // delay_ms(1000);
+
+    // TASK 4:
+    // printf("Frequency: %.2f Hz\r\n", frequency);
+    // printf("Period: %lu us\r\n", period);
     
   }
   /* USER CODE END 3 */
