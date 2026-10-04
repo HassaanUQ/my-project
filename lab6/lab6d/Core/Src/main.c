@@ -83,32 +83,20 @@ int _write(int file, char *ptr, int len)
     return len;
 }
 
-void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
-{
-    if (htim->Instance == TIM2)
-    {
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
+    if (htim->Instance == TIM2) {
         uint32_t current_capture = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
-
-        if (last_captured_value != 0)
-        {
-            // /* Handle timer rollover (16-bit register wraps at 65535) */
-            if (current_capture >= last_captured_value)
-            {
-                captured_period = current_capture - last_captured_value;
-            }
+        if (last_captured_value != 0) {
+            if (current_capture >= last_captured_value) captured_period = current_capture - last_captured_value;
             period_sum += captured_period;
             sample_count++;
-
-            /* Once 10 samples are accumulated, calculate average */
-            if (sample_count >= SAMPLES)
-            {
+            if (sample_count >= SAMPLES) {
                 averagePeriod = period_sum / SAMPLES;
                 period_sum = 0;
                 sample_count = 0;
-                print_flag = 1; // Signal main loop to print results
+                print_flag = 1;
             }
         }
-
         last_captured_value = current_capture;
     }
 }
@@ -156,23 +144,16 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    if (print_flag)
-    {
-        print_flag = 0; // Reset flag
-
-        if (averagePeriod != 0)
-        {
-            /* 1000000 us = 1 second */
+    if (print_flag) {
+        print_flag = 0; 
+        if (averagePeriod != 0) {
             frequency = 666667 / averagePeriod;
             rpm = (60 * frequency) / PPR;
-
             printf("Average Period: %d us\r\n", (int) averagePeriod);
             printf("Frequency: %d Hz\r\n", (int)frequency);
             printf("RPM: %d\r\n",(int) rpm);
         }
     }
-
-    HAL_Delay(100); // Prevents UART terminal flooding
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
