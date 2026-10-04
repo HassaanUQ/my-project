@@ -33,7 +33,7 @@
 /* USER CODE BEGIN PD */
 
 #define SAMPLES 10
-#define PPR 300      
+#define PPR 330      
 
 /* USER CODE END PD */
 
@@ -54,14 +54,10 @@ UART_HandleTypeDef huart1;
 PCD_HandleTypeDef hpcd_USB_FS;
 
 /* USER CODE BEGIN PV */
-
-
 uint32_t periods[SAMPLES];
-uint32_t averagePeriod = 0;
-uint32_t frequency = 0;
+uint32_t average = 0;
+uint32_t freq = 0;
 uint32_t rpm = 0;
-
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -78,14 +74,10 @@ static void MX_TIM3_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
-int _write(int file, char *ptr, int len)
-{
+int _write(int file, char *ptr, int len) {
     HAL_UART_Transmit(&huart1, (uint8_t *)ptr, len, HAL_MAX_DELAY);
     return len;
 }
-
-
 /* USER CODE END 0 */
 
 /**
@@ -94,7 +86,6 @@ int _write(int file, char *ptr, int len)
   */
 int main(void)
 {
-
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
@@ -136,56 +127,24 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
-
-
     uint64_t sum = 0;
-
-    /* Take 10 samples */
-    for (int i = 0; i < SAMPLES; i++)
-    {
-        /* Wait for first falling edge */
+    for (int i = 0; i < SAMPLES; i++) {
         while (HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_0) == GPIO_PIN_RESET);
         while (HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_0) == GPIO_PIN_SET);
-
-        /* First falling edge */
         __HAL_TIM_SET_COUNTER(&htim3, 0);
-
-        /* Wait for second falling edge */
         while (HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_0) == GPIO_PIN_RESET);
         while (HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_0) == GPIO_PIN_SET);
-        /* Second falling edge */
         periods[i] = __HAL_TIM_GET_COUNTER(&htim3);
     }
-
-
-    /* Add 10 periods */
-    for (int i = 0; i < SAMPLES; i++)
-    {
-        sum = sum + periods[i];
+    for (int i = 0; i < SAMPLES; i++) sum = sum + periods[i];
+    average = sum / SAMPLES;
+    if (average > 0) {
+       freq = 666667 / average;
+       rpm = (60 * freq) / PPR;
+       printf("Average Period: %d us\r\n", (int)average);
+       printf("freq: %d Hz\r\n", (int)freq);
+       printf("RPM: %d\r\n", (int)rpm);
     }
-
-
-    /* Average */
-    averagePeriod = sum / SAMPLES;
-
-
-    if (averagePeriod != 0)
-    {
-    frequency = 1000000 / averagePeriod;
-    rpm = (60 * frequency) / PPR;
-    printf("Average Period: %d us\r\n", (int)averagePeriod);
-    printf("Frequency: %d Hz\r\n", (int)frequency);
-    printf("RPM: %d\r\n", (int)rpm);
-    }
-
-    // HAL_Delay(500);
-
-
-
-
-    
-
   }
   /* USER CODE END 3 */
 }
