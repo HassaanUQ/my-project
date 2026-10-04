@@ -145,8 +145,7 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+  while (1) {
     if (flag) {
       uint32_t total = 0;
       for (int i = 0 ; i < 10 ; i++) {
