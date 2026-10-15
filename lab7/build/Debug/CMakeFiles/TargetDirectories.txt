@@ -1,0 +1,6 @@
+D:/Hassaan/Fall 26/MCI/lab7/build/Debug/CMakeFiles/lab7.dir
+D:/Hassaan/Fall 26/MCI/lab7/build/Debug/CMakeFiles/edit_cache.dir
+D:/Hassaan/Fall 26/MCI/lab7/build/Debug/CMakeFiles/rebuild_cache.dir
+D:/Hassaan/Fall 26/MCI/lab7/build/Debug/cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir
+D:/Hassaan/Fall 26/MCI/lab7/build/Debug/cmake/stm32cubemx/CMakeFiles/edit_cache.dir
+D:/Hassaan/Fall 26/MCI/lab7/build/Debug/cmake/stm32cubemx/CMakeFiles/rebuild_cache.dir
