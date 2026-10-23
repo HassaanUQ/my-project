@@ -22,11 +22,19 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "stdio.h"
+#include "stm32f3xx_hal.h"
+#include "stm32f3xx_hal_i2c.h"
 #include "string.h"
+#include <stdint.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+typedef struct {
+  int16_t x_r , y_r , z_r;
+  float x , y , z;
+  float x_offset , y_offset , z_offset;
+} sensor;
 
 /* USER CODE END PTD */
 
@@ -51,6 +59,10 @@ PCD_HandleTypeDef hpcd_USB_FS;
 
 /* USER CODE BEGIN PV */
 
+// Task 1:
+// uint8_t recieve = 0;
+// char msg[128];
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -61,6 +73,68 @@ static void MX_SPI1_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_USB_PCD_Init(void);
 /* USER CODE BEGIN PFP */
+
+// Task 2:
+void Init_LSM() {
+  uint8_t val1 = 0x67;
+  uint8_t val2 = 0x00;
+  HAL_I2C_Mem_Write(&hi2c1, 0x32, 0x20, I2C_MEMADD_SIZE_8BIT, &val1, 1, HAL_MAX_DELAY);
+  HAL_I2C_Mem_Write(&hi2c1, 0x32, 0x23, I2C_MEMADD_SIZE_8BIT, &val2, 1, HAL_MAX_DELAY);
+}
+
+void Offset_LSM(sensor *lsm) {
+  float x_total = 0;
+  float y_total = 0;
+  float z_total = 0;
+  uint8_t xl , xh , yl , yh , zl , zh;
+  for (int i = 0 ; i < 25 ; i++) {
+    HAL_I2C_Mem_Read(&hi2c1, 0x33, 0x28, I2C_MEMADD_SIZE_8BIT, &xl, 1, HAL_MAX_DELAY);
+    HAL_I2C_Mem_Read(&hi2c1, 0x33, 0x29, I2C_MEMADD_SIZE_8BIT, &xh, 1, HAL_MAX_DELAY);
+    HAL_I2C_Mem_Read(&hi2c1, 0x33, 0x2A, I2C_MEMADD_SIZE_8BIT, &yl, 1, HAL_MAX_DELAY);
+    HAL_I2C_Mem_Read(&hi2c1, 0x33, 0x2B, I2C_MEMADD_SIZE_8BIT, &yh, 1, HAL_MAX_DELAY);
+    HAL_I2C_Mem_Read(&hi2c1, 0x33, 0x2C, I2C_MEMADD_SIZE_8BIT, &zl, 1, HAL_MAX_DELAY);
+    HAL_I2C_Mem_Read(&hi2c1, 0x33, 0x2D, I2C_MEMADD_SIZE_8BIT, &zh, 1, HAL_MAX_DELAY);
+    int16_t x = (int16_t) ((xh << 8) | xl);
+    int16_t y = (int16_t) ((yh << 8) | yl);
+    int16_t z = (int16_t) ((zh << 8) | zl);
+    x = x >> 6;
+    y = y >> 6;
+    z = z >> 6;
+    x_total += (x * 3.9 / 1000);
+    y_total += (y * 3.9 / 1000);
+    z_total += (z * 3.9 / 1000);
+    // HAL_Delay(10);
+  }
+  lsm->x_offset = x_total / 25;
+  lsm->y_offset = y_total / 25;
+  lsm->z_offset = -1 + z_total / 25;
+    }
+
+void Read_LSM(sensor *lsm) {
+  uint8_t xl , xh , yl , yh , zl , zh; 
+  HAL_I2C_Mem_Read(&hi2c1, 0x33, 0x28, I2C_MEMADD_SIZE_8BIT, &xl, 1, HAL_MAX_DELAY);
+  HAL_I2C_Mem_Read(&hi2c1, 0x33, 0x29, I2C_MEMADD_SIZE_8BIT, &xh, 1, HAL_MAX_DELAY);
+  HAL_I2C_Mem_Read(&hi2c1, 0x33, 0x2A, I2C_MEMADD_SIZE_8BIT, &yl, 1, HAL_MAX_DELAY);
+  HAL_I2C_Mem_Read(&hi2c1, 0x33, 0x2B, I2C_MEMADD_SIZE_8BIT, &yh, 1, HAL_MAX_DELAY);
+  HAL_I2C_Mem_Read(&hi2c1, 0x33, 0x2C, I2C_MEMADD_SIZE_8BIT, &zl, 1, HAL_MAX_DELAY);
+  HAL_I2C_Mem_Read(&hi2c1, 0x33, 0x2D, I2C_MEMADD_SIZE_8BIT, &zh, 1, HAL_MAX_DELAY);
+  lsm->x_r = (int16_t) ((xh << 8) | xl);
+  lsm->y_r = (int16_t) ((yh << 8) | yl);
+  lsm->z_r = (int16_t) ((zh << 8) | zl);
+  lsm->x_r = lsm->x_r >> 6;
+  lsm->y_r = lsm->y_r >> 6;
+  lsm->z_r = lsm->z_r >> 6;
+  lsm->x = (lsm->x_r * 3.9 / 1000) - lsm->x_offset;
+  lsm->y = (lsm->y_r * 3.9 / 1000) - lsm->y_offset;
+  lsm->z = (lsm->z_r * 3.9 / 1000) - lsm->z_offset;
+}
+
+void Print_LSM(sensor *lsm) {
+  char msg[128];
+  int len = sprintf(msg, "%.2f,%.2f,%.2f \r\n" , lsm->x , lsm->y , lsm->z);
+  // int len = sprintf(msg, "%.2f \r\n" , lsm->x);
+  HAL_UART_Transmit(&huart1 , (uint8_t*)msg , len , HAL_MAX_DELAY);
+}
 
 /* USER CODE END PFP */
 
@@ -108,10 +182,25 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  uint
-  HAL_I2C_Mem_Read(&hi2c1 , 0x33 , 0x0F , I2C_MEMADD_SIZE_8BIT , )
+
+  // Task 2:
+  sensor lsm = {0};
+  Init_LSM();
+  Offset_LSM(&lsm);
+
   while (1)
   {
+    // Task 2:
+    Read_LSM(&lsm);
+    Print_LSM(&lsm);
+    HAL_Delay(500);
+
+    // TASK 1:
+    // HAL_I2C_Mem_Read(&hi2c1 , 0x33 , 0x0F , I2C_MEMADD_SIZE_8BIT , &recieve , 1 , HAL_MAX_DELAY);
+    // int len = sprintf(msg, "%X \r\n" , recieve);
+    // HAL_UART_Transmit(&huart1 , (uint8_t*)msg , len , HAL_MAX_DELAY);
+    // HAL_Delay(100);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
